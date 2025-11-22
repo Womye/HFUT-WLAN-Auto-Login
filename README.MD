@@ -6,7 +6,44 @@
 
 ------
 
-# 🌟 **完整 Python 自动登录脚本（网线 + WiFi 全自动）**
+# 🌟 **一、**完整 Python 自动登录脚本（网线 + WiFi 全自动）
+
+可以直接下载上传好的脚本也可以复制代码自己创建文件
+
+PASSWORD_MD5这一项请按照以下操作（一步步照做）
+
+## ▲ 1. 打开 http://172.18.3.3
+
+浏览器直接访问你的校园网认证界面。
+
+## ▲ 2. 按 F12 → Network(网络)
+
+清空一下列表。
+
+## ▲ 3. 输入学号 + 密码 → 点击登录
+
+然后观察 Network 中有**红色/绿色/POST/GET 请求**出现。
+
+## ▲ 4. 找到真正的登录请求（非常关键）
+
+- ### 在 Network 中点击 `0.htm` 之后
+
+  上方有几个标签：
+
+  - 标头（Headers）
+  - **载荷 / Payload（或 Form Data）**
+  - 预览（Preview）
+  - 响应（Response）
+  - 启动器（Initiator）
+  - 时间（Timing）
+
+  👉 **真正的账号密码参数在 Payload 里。** 
+
+  1. 在 Network 中点选 **0.htm**
+  2. 在右边的面板点开 **载荷（Payload）**
+     - 有的浏览器叫 **Form Data**
+     - 有的叫 **Request Payload**
+  3. 找到**upass**这一项，右键复制值，这就是PASSWORD_MD5的数据
 
 ```python
 import subprocess
@@ -124,7 +161,7 @@ if __name__ == "__main__":
 
 ------
 
-# 📌 **二、把脚本打包成静默 exe（无黑框）**
+# 📌 **二、把脚本打包成静默 exe（要先安装Python）**
 
 在键盘上按WIN + R打开cmd先安装：
 
@@ -132,7 +169,7 @@ if __name__ == "__main__":
 pip install pyinstaller
 ```
 
-接着在auto_hfut_login.py所在文件夹按Shift+右键，选择在此处打开Powershell，然后输入：
+接着在auto_hfut_login.py所在文件夹按**Shift+右键**，选择在此处打开Powershell，然后输入：
 
 ```bash
 pyinstaller --noconsole --onefile auto_hfut_login.py
