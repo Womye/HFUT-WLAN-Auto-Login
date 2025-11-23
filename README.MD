@@ -1,16 +1,10 @@
-1. **自动判断是否插网线**
-2. **插网线 → 调用你之前用的 Drcom 登录脚本**
-3. **未插网线 → 自动连接 hfut-wlan + 自动提交认证（模拟浏览器登录）**
-4. **静默运行（无黑框）**
-5. **开机自启动设置方法（一步到位）**
-
 ------
 
-# 🌟 **一、**完整 Python 自动登录脚本（网线 + WiFi 全自动）
+# 🌟 **一、**Python 自动登录脚本
 
 可以直接下载上传好的脚本也可以复制代码自己创建文件
 
-PASSWORD_MD5这一项请按照以下操作（一步步照做）
+**UPASS**这一项请按照以下操作（一步步照做）
 
 ## ▲ 1. 打开 http://172.18.3.3
 
@@ -43,120 +37,56 @@ PASSWORD_MD5这一项请按照以下操作（一步步照做）
   2. 在右边的面板点开 **载荷（Payload）**
      - 有的浏览器叫 **Form Data**
      - 有的叫 **Request Payload**
-  3. 找到**upass**这一项，右键复制值，这就是PASSWORD_MD5的数据
+  3. 找到**upass**这一项，右键复制值，这就是**UPASS**的数据
 
 ```python
-import subprocess
 import requests
+import psutil
 import time
-import os
-import sys
-import ctypes
 
-# =========== 你的登录信息（修改这里） ==========
-USERNAME = "你的学号"
-PASSWORD_MD5 = "控制台中已加密的密码"
-OMKKEY = "123456"
+# -----------------------------
+# 你的校园网账号配置
+# -----------------------------
+STUDENT_ID = "你的学号"
+UPASS = "加密后的密码"
 
-WIFI_NAME = "hfut-wlan"
-DRCOM_URL = "http://172.18.3.3/0.htm"
-# =================================================
+LOGIN_URL = "http://172.18.3.3/0.htm"
 
+POST_DATA = {
+    "DDDDD": STUDENT_ID,
+    "upass": UPASS,
+    "R1": "0",
+    "R2": "1",
+    "para": "00",
+    "0MKKey": "123456",
+    "v6ip": ""
+}
 
-# ------- 判断是否插网线 -------
-def ethernet_connected():
-    try:
-        output = subprocess.check_output(
-            'powershell "Get-NetAdapter | Where-Object {$_.Status -eq \'Up\'} | Select-Object -ExpandProperty InterfaceDescription"',
-            shell=True, encoding='gbk', errors='ignore'
-        )
-        return ("Realtek" in output) or ("Ethernet" in output) or ("PCIe" in output)
-    except:
-        return False
-
-
-# ------- 连接校园网 WiFi -------
-def connect_wifi():
-    print("正在连接校园网 WiFi ...")
-
-    cmd = f'netsh wlan connect name="{WIFI_NAME}"'
-    try:
-        subprocess.run(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        time.sleep(3)
-        return True
-    except:
-        return False
-
-
-# ------- WiFi 登录认证（模拟浏览器） -------
-def wifi_login():
-    print("正在进行 WiFi 认证 ...")
-
-    login_url = DRCOM_URL
-
-    data = {
-        "DDDDD": USERNAME,
-        "upass": PASSWORD_MD5,
-        "R1": "0",
-        "R2": "1",
-        "para": "00",
-        "0MKKey": OMKKEY
-    }
-
-    try:
-        r = requests.post(login_url, data=data, timeout=5)
-        if r.status_code == 200:
-            print("WiFi 登录成功!")
+# -----------------------------
+# 检测以太网是否连接
+# -----------------------------
+def is_ethernet_connected():
+    interfaces = psutil.net_if_stats()
+    for name, stats in interfaces.items():
+        if ("Ethernet" in name or "以太网" in name) and stats.isup:
             return True
-        else:
-            print("WiFi 登录失败!!")
-    except:
-        pass
-
     return False
 
-
-# ------- 网线登录（调用 Drcom） -------
-def ethernet_login():
-    print("正在进行有线 Drcom 登录...")
-
-    data = {
-        "DDDDD": USERNAME,
-        "upass": PASSWORD_MD5,
-        "R1": "0",
-        "R2": "1",
-        "para": "00",
-        "0MKKey": OMKKEY
-    }
-
-    try:
-        r = requests.post(DRCOM_URL, data=data, timeout=5)
-        if r.status_code == 200:
-            print("有线登录成功!")
-            return True
-    except:
-        pass
-
-    print("有线登录失败!")
-    return False
-
-
-# ------------------- 入口 -------------------
+# -----------------------------
+# 主流程：有网线 → 登录
+# -----------------------------
 def main():
-    # 静默
-    if not sys.stdout.isatty():
-        pass
+    time.sleep(2)
 
-    if ethernet_connected():
-        ethernet_login()
-    else:
-        connect_wifi()
-        time.sleep(2)
-        wifi_login()
-
+    if is_ethernet_connected():
+        try:
+            requests.post(LOGIN_URL, data=POST_DATA, timeout=3)
+        except:
+            pass
 
 if __name__ == "__main__":
     main()
+
 ```
 
 ------
@@ -167,18 +97,19 @@ if __name__ == "__main__":
 
 ```bash
 pip install pyinstaller
+pip install psutil
 ```
 
-接着在auto_hfut_login.py所在文件夹按**Shift+右键**，选择在此处打开Powershell，然后输入：
+接着在auto_login_silent.py所在文件夹按**Shift+右键**，选择在此处打开Powershell，然后输入：
 
 ```bash
-pyinstaller --noconsole --onefile auto_hfut_login.py
+pyinstaller -F --noconsole auto_login_once.py
 ```
 
 生成文件在：
 
 ```
-dist/auto_hfut_login.exe
+dist/auto_login_silent.exe
 ```
 
 这是你要放进自启动的文件。
@@ -197,7 +128,7 @@ C:\Users\你的用户名\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\S
 
 1. Win + R
 2. 输入：`shell:startup`
-3. 把 `auto_hfut_login.exe` 拖进去
+3. 把 `auto_login_silent.exe` 拖进去
 
 即可开机自动静默运行。
 
@@ -205,12 +136,9 @@ C:\Users\你的用户名\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\S
 
 # 💡 **四、说明**
 
-1. ✔ 自动判断是否插有线网
-2. ✔ 若有 → Drcom 登录
-3. ✔ 若无 → 自动连接 hfut-wlan + 自动认证
-4. ✔ 不弹窗、不显示控制台
-5. ✔ 不需要判断掉线
-6. ✔ 可直接放进开机启动项
+1. ✔ 不弹窗、不显示控制台
+2. ✔ 可直接放进开机启动项
+3. ✔ 目前只适用于以太网连接状态的校园网自动登录
 
 ------
 
